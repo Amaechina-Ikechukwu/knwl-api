@@ -14,6 +14,7 @@ app.use("/createavatar", createAvatar);
 
 // // Create and deploy your first functions
 // // https://firebase.google.com/docs/functions/get-started
+// app.listen(3000);
 //
 exports.knwl = functions.https.onRequest(app);
 // const app1 = express();

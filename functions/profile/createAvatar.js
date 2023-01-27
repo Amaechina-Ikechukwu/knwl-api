@@ -32,7 +32,7 @@ const removebg = (imageurl) => {
       return console.error("Request failed:", error);
     });
 };
-const url = "https://api.unionavatars.com/avatars";
+
 const apiKey = "4AnaC3AYhBNREKNBYPxQGAVo";
 
 const extractcolor = () => {
@@ -58,31 +58,36 @@ const extractcolor = () => {
     });
 };
 
+const fetch = (...args) =>
+  import("node-fetch").then(({ default: fetch }) => fetch(...args));
+
 router.post("/", async (req, res) => {
   const user = {
-    imageurl: req.body.imageurl,
+    imageurl: req.body.image_url,
   };
-  axios({
-    url: "https://api.remove.bg/v1.0/removebg",
-    data: formData,
-    method: "post",
-
-    responseType: "arraybuffer",
+  console.log(user.imageurl);
+  formData.append("image_url", "https://www.remove.bg/example.jpg");
+  const url = "https://api.remove.bg/v1.0/removebg";
+  const options = {
+    method: "POST",
+    body: formData,
     headers: {
-      ...formData.getHeaders(),
       "X-Api-Key": apiKey,
     },
-    encoding: null,
-  })
-    .then(function (response) {
-      if (response.status != 200)
-        return console.error("Error:", response.status, response.statusText);
-      console.log(response);
-      return;
-    })
-    .catch((error) => {
-      return console.error("Request failed:", error);
-    });
+  };
+
+  fetch(url, options)
+    .then((res) => res.json())
+    .then((json) => console.log(json))
+    .catch((err) => console.error("error:" + err));
+  try {
+    let response = await fetch(url, options);
+    response = await response.json();
+    res.status(200).json(response);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ msg: `Internal Server Error.` });
+  }
 });
 
 module.exports = router;
