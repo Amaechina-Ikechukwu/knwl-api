@@ -3,7 +3,10 @@ const express = require("express");
 const service = require("./serviceaccountkey.json");
 const app = express();
 const admin = require("firebase-admin");
-admin.initializeApp({ credential: admin.credential.cert(service) });
+admin.initializeApp({
+  credential: admin.credential.cert(service),
+  storageBucket: "knwl-d295a.appspot.com",
+});
 
 const userRouter = require("./users/user");
 const getUser = require("./users/readUsers");
@@ -26,4 +29,3 @@ exports.knwl = functions.https.onRequest(app);
 
 // module.exports = {
 //   api1,
-// };

@@ -6,7 +6,7 @@ router.get("/", async (req, res) => {
   const usersRef = db.collection("users");
   const snapshot = await usersRef.get();
   snapshot.forEach((doc) => {
-    usersList.push(doc.data());
+    usersList.push(doc.id);
     console.log(doc.id, "=>", doc.data());
   });
   res.status(200).send(usersList);

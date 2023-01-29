@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 const functions = require("firebase-functions");
 const axios = require("axios");
 const FormData = require("form-data");
+const { removeBackgroundFromImageUrl } = require("remove.bg");
 
 const formData = new FormData();
 formData.append("size", "auto");
@@ -64,30 +65,56 @@ const fetch = (...args) =>
 router.post("/", async (req, res) => {
   const user = {
     imageurl: req.body.image_url,
+    userId: req.body.user_id,
   };
   console.log(user.imageurl);
-  formData.append("image_url", "https://www.remove.bg/example.jpg");
-  const url = "https://api.remove.bg/v1.0/removebg";
-  const options = {
-    method: "POST",
-    body: formData,
-    headers: {
-      "X-Api-Key": apiKey,
-    },
-  };
+  // formData.append("image_url", "https://www.remove.bg/example.jpg");
+  // const url = "https://api.remove.bg/v1.0/removebg";
+  // const options = {
+  //   method: "POST",
+  //   body: formData,
+  //   headers: {
+  //     "X-Api-Key": apiKey,
+  //   },
+  // };
+  let blob;
+  const image = await removeBackgroundFromImageUrl({
+    url: user.imageurl,
+    apiKey,
+    size: "regular",
+    type: "person",
+  })
+    .then(async (result) => {
+      return Buffer.from(result.base64img, "base64");
+      // return new Blob([new Uint8Array(base64img)], { type: "image/png" });
+    })
+    .catch((errors) => {
+      console.log(JSON.stringify(errors));
+      return;
+    });
 
-  fetch(url, options)
-    .then((res) => res.json())
-    .then((json) => console.log(json))
-    .catch((err) => console.error("error:" + err));
-  try {
-    let response = await fetch(url, options);
-    response = await response.json();
-    res.status(200).json(response);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ msg: `Internal Server Error.` });
-  }
+  await admin
+    .storage()
+    .bucket()
+    .upload(image, {
+      destination: "profile/" + user.userId,
+    })
+    .then((result) => {
+      console.log(result);
+      return;
+    });
+  // fetch(url, options)
+  //   .then((res) => res.json())
+  //   .then((json) => console.log(json))
+  //   .catch((err) => console.error("error:" + err));
+  // try {
+  //   let response = await fetch(url, options);
+  //   response = await response.json();
+  //   res.status(200).json(response);
+  // } catch (err) {
+  //   console.log(err);
+  //   res.status(500).json({ msg: `Internal Server Error.` });
+  // }
 });
 
 module.exports = router;
