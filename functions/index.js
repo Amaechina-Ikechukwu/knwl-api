@@ -1,13 +1,15 @@
 const functions = require("firebase-functions");
 const express = require("express");
 const service = require("./serviceaccountkey.json");
-const app = express();
+var cors = require("cors");
+var app = express();
+
 const admin = require("firebase-admin");
 admin.initializeApp({
   credential: admin.credential.cert(service),
   storageBucket: "knwl-d295a.appspot.com",
 });
-
+app.use(cors());
 const userRouter = require("./users/user");
 const getUser = require("./users/readUsers");
 const createAvatar = require("./profile/createAvatar");

@@ -5,9 +5,10 @@ const functions = require("firebase-functions");
 const axios = require("axios");
 const FormData = require("form-data");
 const { removeBackgroundFromImageUrl } = require("remove.bg");
-const outputFile = `${__dirname}/out/img-removed-from-file.png`;
-const colorExtractor = require("img-color-extractor");
+
 const fs = require("fs");
+const getPixels = require("get-pixels");
+const { extractColors } = require("extract-colors");
 
 const formData = new FormData();
 formData.append("size", "auto");
@@ -71,30 +72,28 @@ router.post("/", async (req, res) => {
     userId: req.body.user_id,
   };
   const outputFile = `${__dirname}/${user.userId}.png`;
-  const stream = fs.createReadStream(
-    `Users/user/projects/knwl-api/functions/profile/${user.userId}.png`
-  );
-  console.log(user.imageurl);
+  // const stream = fs.createReadStream(
+  //   `Users/user/projects/knwl-api/functions/profile/${user.userId}.png`
+  // );
+  console.log(req.body);
 
   let blob;
-  const image = await removeBackgroundFromImageUrl({
-    url: user.imageurl,
-    apiKey,
-    size: "regular",
-    type: "person",
-    outputFile,
-  })
-    .then(async (result) => {
-      // console.log(`File saved to ${outputFile}`);
-      colorExtractor.extract(stream).then((colors) => {
-        console.log(colors);
-      });
-      return;
-    })
-    .catch((errors) => {
-      console.log(JSON.stringify(errors));
-      return;
-    });
+
+  // await removeBackgroundFromImageUrl({
+  //   url: user.imageurl,
+  //   apiKey,
+  //   size: "regular",
+  //   type: "person",
+  //   outputFile,
+  // })
+  //   .then(async (result) => {
+  //     console.log(`File saved to ${outputFile}`);
+  //     return;
+  //   })
+  //   .catch((errors) => {
+  //     console.log(JSON.stringify(errors));
+  //     return;
+  //   });
 
   // await admin
   //   .storage()
@@ -115,6 +114,24 @@ router.post("/", async (req, res) => {
   //     console.log({ signedUrl });
   //     res.json({ url: signedUrl });
   //   });
+  await getPixels(outputFile, async (err, pixels) => {
+    if (!err) {
+      const data = [...pixels.data];
+      const width = Math.round(Math.sqrt(data.length / 4));
+      const height = width;
+      let colors = [];
+      return extractColors({ data, width, height })
+        .then((result) => {
+          for (const key in result) {
+            colors.push(result[key]?.hex);
+          }
+          // return colors;
+          res.status(200).json({ colors });
+        })
+        .catch((err) => console.log(err));
+    }
+  });
+  return;
 });
 
 module.exports = router;
