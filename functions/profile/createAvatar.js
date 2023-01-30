@@ -5,6 +5,9 @@ const functions = require("firebase-functions");
 const axios = require("axios");
 const FormData = require("form-data");
 const { removeBackgroundFromImageUrl } = require("remove.bg");
+const outputFile = `${__dirname}/out/img-removed-from-file.png`;
+const colorExtractor = require("img-color-extractor");
+const fs = require("fs");
 
 const formData = new FormData();
 formData.append("size", "auto");
@@ -67,54 +70,51 @@ router.post("/", async (req, res) => {
     imageurl: req.body.image_url,
     userId: req.body.user_id,
   };
+  const outputFile = `${__dirname}/${user.userId}.png`;
+  const stream = fs.createReadStream(
+    `Users/user/projects/knwl-api/functions/profile/${user.userId}.png`
+  );
   console.log(user.imageurl);
-  // formData.append("image_url", "https://www.remove.bg/example.jpg");
-  // const url = "https://api.remove.bg/v1.0/removebg";
-  // const options = {
-  //   method: "POST",
-  //   body: formData,
-  //   headers: {
-  //     "X-Api-Key": apiKey,
-  //   },
-  // };
+
   let blob;
   const image = await removeBackgroundFromImageUrl({
     url: user.imageurl,
     apiKey,
     size: "regular",
     type: "person",
+    outputFile,
   })
     .then(async (result) => {
-      return Buffer.from(result.base64img, "base64");
-      // return new Blob([new Uint8Array(base64img)], { type: "image/png" });
+      // console.log(`File saved to ${outputFile}`);
+      colorExtractor.extract(stream).then((colors) => {
+        console.log(colors);
+      });
+      return;
     })
     .catch((errors) => {
       console.log(JSON.stringify(errors));
       return;
     });
 
-  await admin
-    .storage()
-    .bucket()
-    .upload(image, {
-      destination: "profile/" + user.userId,
-    })
-    .then((result) => {
-      console.log(result);
-      return;
-    });
-  // fetch(url, options)
-  //   .then((res) => res.json())
-  //   .then((json) => console.log(json))
-  //   .catch((err) => console.error("error:" + err));
-  // try {
-  //   let response = await fetch(url, options);
-  //   response = await response.json();
-  //   res.status(200).json(response);
-  // } catch (err) {
-  //   console.log(err);
-  //   res.status(500).json({ msg: `Internal Server Error.` });
-  // }
+  // await admin
+  //   .storage()
+  //   .bucket()
+  //   .upload(outputFile, {
+  //     destination: "profile/" + user.userId + ".png",
+  //   })
+  //   .then((result) => {
+  //     return;
+  //   });
+  // await admin
+  //   .storage()
+  //   .bucket()
+  //   .file("profile/" + user.userId + ".png")
+  //   .getSignedUrl({ action: "read", expires: "03-09-2491" })
+  //   .then((urls) => {
+  //     const signedUrl = urls[0];
+  //     console.log({ signedUrl });
+  //     res.json({ url: signedUrl });
+  //   });
 });
 
 module.exports = router;
