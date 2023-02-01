@@ -5,7 +5,7 @@ const functions = require("firebase-functions");
 const axios = require("axios");
 const FormData = require("form-data");
 const { removeBackgroundFromImageUrl } = require("remove.bg");
-
+const base64 = require("node-base64-image");
 const fs = require("fs");
 const getPixels = require("get-pixels");
 const { extractColors } = require("extract-colors");
@@ -68,70 +68,82 @@ const fetch = (...args) =>
 
 router.post("/", async (req, res) => {
   const user = {
-    imageurl: req.body.image_url,
+    imageurl: req.body.base64image,
     userId: req.body.user_id,
+    // base64image: req.body.base64image,
   };
-  const outputFile = `${__dirname}/${user.userId}.png`;
-  // const stream = fs.createReadStream(
-  //   `Users/user/projects/knwl-api/functions/profile/${user.userId}.png`
-  // );
+
+  const stream = fs.createReadStream(`example${user.userId}.jpg`);
+  const options = {
+    string: true,
+    headers: {
+      "User-Agent": "my-app",
+    },
+  };
   console.log(req.body);
-
+  // const image = await base64.encode(user.imageurl, options);
   let blob;
+  try {
+    await base64.decode(user.imageurl, {
+      fname: "example" + user.userId,
+      ext: "jpg",
+    });
+    // await removeBackgroundFromImageUrl({
+    //   url: user.imageurl,
+    //   apiKey,
+    //   size: "regular",
+    //   type: "person",
+    //   outputFile,
+    // })
+    //   .then(async (result) => {
+    //     console.log(`File saved to ${outputFile}`);
+    //     return;
+    //   })
+    //   .catch((errors) => {
+    //     console.log(JSON.stringify(errors));
+    //     return;
+    //   });
 
-  // await removeBackgroundFromImageUrl({
-  //   url: user.imageurl,
-  //   apiKey,
-  //   size: "regular",
-  //   type: "person",
-  //   outputFile,
-  // })
-  //   .then(async (result) => {
-  //     console.log(`File saved to ${outputFile}`);
-  //     return;
-  //   })
-  //   .catch((errors) => {
-  //     console.log(JSON.stringify(errors));
-  //     return;
-  //   });
-
-  // await admin
-  //   .storage()
-  //   .bucket()
-  //   .upload(outputFile, {
-  //     destination: "profile/" + user.userId + ".png",
-  //   })
-  //   .then((result) => {
-  //     return;
-  //   });
-  // await admin
-  //   .storage()
-  //   .bucket()
-  //   .file("profile/" + user.userId + ".png")
-  //   .getSignedUrl({ action: "read", expires: "03-09-2491" })
-  //   .then((urls) => {
-  //     const signedUrl = urls[0];
-  //     console.log({ signedUrl });
-  //     res.json({ url: signedUrl });
-  //   });
-  await getPixels(outputFile, async (err, pixels) => {
-    if (!err) {
-      const data = [...pixels.data];
-      const width = Math.round(Math.sqrt(data.length / 4));
-      const height = width;
-      let colors = [];
-      return extractColors({ data, width, height })
-        .then((result) => {
-          for (const key in result) {
-            colors.push(result[key]?.hex);
-          }
-          // return colors;
-          res.status(200).json({ colors });
-        })
-        .catch((err) => console.log(err));
-    }
-  });
-  return;
+    // await admin
+    //   .storage()
+    //   .bucket()
+    //   .upload(outputFile, {
+    //     destination: "profile/" + user.userId + ".png",
+    //   })
+    //   .then((result) => {
+    //     return;
+    //   });
+    // await admin
+    //   .storage()
+    //   .bucket()
+    //   .file("profile/" + user.userId + ".png")
+    //   .getSignedUrl({ action: "read", expires: "03-09-2491" })
+    //   .then((urls) => {
+    //     const signedUrl = urls[0];
+    //     console.log({ signedUrl });
+    //     res.json({ url: signedUrl });
+    //   });
+    const outputFile = `${__dirname}/example${user.userId}.jpg`;
+    await getPixels(outputFile, async (err, pixels) => {
+      if (!err) {
+        const data = [...pixels.data];
+        const width = Math.round(Math.sqrt(data.length / 4));
+        const height = width;
+        let colors = [];
+        return extractColors({ data, width, height })
+          .then((result) => {
+            for (const key in result) {
+              colors.push(result[key]?.hex);
+            }
+            // return colors;
+            res.status(200).json({ colors }, user.imageurl);
+          })
+          .catch((err) => console.log(err));
+      }
+    });
+  } catch (e) {
+    console.log({ e });
+  }
 });
 
 module.exports = router;
