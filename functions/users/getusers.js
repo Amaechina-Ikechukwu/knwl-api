@@ -4,7 +4,7 @@ const router = require("express").Router();
 router.get("/", async (req, res) => {
   const { headers, body } = req;
   const token = headers.authorization.split(" ")[1];
-  console.log(token);
+
   if (headers.authorization == null || headers.authorization == undefined) {
     res.json({ message: "please add headers" });
   } else {

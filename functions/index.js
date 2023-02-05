@@ -31,7 +31,7 @@ app.listen(3000, () => {
   console.log("Hey ikay, i am loaded");
 });
 //
-// exports.knwl = functions.https.onRequest(app);
+exports.knwl = functions.https.onRequest(app);
 // const app1 = express();
 // app1.get("*", (request, response) => {
 //   response.send("Hello from Express on Firebase!");
